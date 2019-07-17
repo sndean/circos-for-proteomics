@@ -385,7 +385,7 @@ circos_fun <- function(sugar_name){
   
   
   # gene labels
-  circos.genomicLabels(ann,labels.column=5,cex=0.25,col=col_text,line_lwd=0.5,line_col="grey80",
+  circos.genomicLabels(ann,labels.column=5,cex=0.25,col=col_text,line_lwd=0.5,line_col="grey50",
   side="inside",connection_height=0.05,labels_height=0.04)
 }
 
@@ -525,7 +525,7 @@ circos_fun <- function(sugar_name){
   
   
   # gene labels
-  circos.genomicLabels(ann,labels.column=5,cex=0.25,col=col_text,line_lwd=0.5,line_col="grey80",
+  circos.genomicLabels(ann,labels.column=5,cex=0.25,col=col_text,line_lwd=0.5,line_col="grey50",
   side="inside",connection_height=0.05,labels_height=0.04)
 }
 
