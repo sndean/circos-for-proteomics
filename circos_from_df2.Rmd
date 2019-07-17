@@ -13,6 +13,15 @@ library(tidyverse)
 
 
 
+# About
+
+https://github.com/jokergoo/circlize
+
+https://jokergoo.github.io/circlize_book/book/genomic-plotting-region.html
+
+http://www.roymfrancis.com/beautiful-circos-plots-in-r/
+
+
 
 ```{r}
 ptt_genome <- read_delim('NC_003030_edit.ptt', delim = '\t') 
@@ -525,7 +534,7 @@ circos_fun('man')
 
 
 ```{r}
-read_csv('~/Desktop/all_proteomics.csv') %>% 
+read_csv('all_proteomics.csv') %>% 
   select(sugar) %>% 
   unique
 ```
