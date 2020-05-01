@@ -148,7 +148,7 @@ circos.track(track.index = get.current.track.index(), panel.fun = function(x, y)
 
 # pvalue
 circos.track(factors = circ_df$seq_type, x = circ_df$start, y = circ_df$pvalue, panel.fun = function(x, y) {
-  circos.points(x, y, col = '#000000', cex = 0.1, pch = 16) # , lwd = 0.3) ### normal is 0.6? though possibly too wide
+  circos.points(x, y, col = '#000000', cex = 0.25, pch = 16) # , lwd = 0.3) ### normal is 0.6? though possibly too wide
   
   }, ylim = range(circ_df$pvalue), track.height = 0.05, bg.border=FALSE) ###### ylim = range(circ_df$pvalue)
 # pvalue y-axis
