@@ -5,6 +5,8 @@ output:
   pdf_document: default
 ---
 
+# Libraries and functions
+
 ```{r, include=FALSE}
 library(tidyverse)
 library(RColorBrewer)
@@ -12,35 +14,11 @@ library(circlize)
 library(limma)
 library(qvalue)
 
-theme_set(theme_bw(base_size = 20))
-
-theme1 <- theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        axis.line = element_line(colour = "black"),
-        legend.title = element_text(color = "black", family="Arial"),
-        legend.text = element_text(color = "black", family="Arial"),
-        axis.text.x = element_text(size = 14, color = "black", family="Arial", angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 14, color = "black", family="Arial"), 
-        axis.title = element_text(color = "black", family="Arial"),
-        strip.text.x = element_text(size = 10, color = "black", family="Arial"),
-        strip.background = element_blank()
-)
-
-theme2 <- theme(panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank(),
-                axis.line = element_line(colour = "black"),
-                legend.title = element_text(color = "black"),
-                legend.text = element_text(color = "black"),
-                axis.text.x = element_text(size = 16, color = "black"),
-                axis.text.y = element_text(size = 16, color = "black"),
-                axis.title = element_text(color = "black"),
-                strip.text.x = element_text(size = 14, color = "black"),
-                strip.text.y = element_text(size = 14, color = "black"),
-                strip.background = element_blank()
-)
+set1 <- brewer.pal(11, "RdYlBu")
 
 scale2 <- function(x) (x + 1)
 
+# from Kammers http://www.biostat.jhsph.edu/~kkammers/software/eupa/R_guide.html
 eb.fit <- function(dat, design){
   n <- dim(dat)[1]
   fit <- lmFit(dat, design)
@@ -63,11 +41,15 @@ eb.fit <- function(dat, design){
 }
 ```
 
+# Read data; calculate LFC, P
+
+Use LIMMA to calculate log2 fold change and moderated p-values with an empirical Bayes approach according to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4373093/
+
 ```{r}
-(dat1 <- read_csv('example.csv') %>% 
+dat1 <- read_csv('example.csv') %>% 
     select(gene, m1:p3) %>% 
     mutate_if(is.numeric, scale2) %>% 
-    mutate_if(is.numeric, log2))
+    mutate_if(is.numeric, log2)
 
 tr <- c("p1", "p2", "p3")
 ct <- c("m1", "m2", "m3")
@@ -79,23 +61,12 @@ dat1_names <- dat1 %>%
   rownames_to_column() %>% 
   select(rowname, gene)
 
-res.eb1 <- res.eb %>% 
+(res.eb1 <- res.eb %>% 
   rownames_to_column() %>% 
-  left_join(dat1_names, ., by='rowname')
+  left_join(dat1_names, ., by='rowname'))
 ```
 
-```{r}
-read_tsv('GCF_000203855.3_ASM20385v3_feature_table.txt') %>%
-  filter(class == 'protein_coding') %>%
-  select(seq_type, seq_type, start, end, attributes) %>%
-  mutate(
-    gene = str_replace_all(attributes, 'old_locus_tag=', '')
-  ) %>%
-  left_join(., res.eb1, by='gene') %>%
-  count(seq_type)
-```
-
-
+# Join data with feature table
 
 ```{r}
 (circ_df <- read_tsv('GCF_000203855.3_ASM20385v3_feature_table.txt') %>% 
@@ -117,11 +88,12 @@ read_tsv('GCF_000203855.3_ASM20385v3_feature_table.txt') %>%
 )
 ```
 
+# Define criteria for labeling
 
 ```{r}
 (ann <- circ_df %>% 
    mutate(
-     significance = ifelse(pvalue < 0.05 & log2_fold_change > 1.1 | pvalue < 0.05 & log2_fold_change <= -1.1,
+     significance = ifelse(pvalue < 0.05 & log2_fold_change > 1.1 | pvalue < 0.05 & log2_fold_change < -1.1,
         'p < 0.05 and |log2FC| > 1.1',
         ifelse(pvalue < 0.05, 'p < 0.05',
                'not significant'))
@@ -133,24 +105,19 @@ read_tsv('GCF_000203855.3_ASM20385v3_feature_table.txt') %>%
  )
 ```
 
-
-chromosome is 3308273
-plasmid	is 1917 + 2365 + 36069
+# Get lengths from assembly report
 
 ```{r}
-1917 + 2365 + 36069
-```
+(assembly_report <- read_tsv('GCF_000203855.3_ASM20385v3_assembly_report.txt', comment = "#", col_names = FALSE) %>% 
+  select(X4, X9) %>% 
+  group_by(X4) %>% 
+  summarize(lengths = sum(X9)))
 
-```{r}
 ref <- data.frame(V1=c("chromosome","plasmid"))
-ref$V2 <- c(3308273, 40351)
+ref$V2 <- assembly_report$lengths
 ```
 
-
-```{r}
-set1 <- brewer.pal(11, "RdYlBu")
-```
-
+# Generate Circos plot
 
 ```{r}
 circos.clear()
@@ -160,7 +127,7 @@ col_text <- "grey10"
 circos.par("track.height" = 0.8, gap.degree=5, 
            cell.padding=c(0, 0, 0, 0))
 circos.initialize(factors = ref$V1, 
-                  xlim = matrix(c(rep(0, 2), ref$V2), ncol = 2))
+                  xlim = matrix(c(rep(0, nrow(ref)), ref$V2), ncol = 2))
 
 # genomes
 circos.track(ylim = c(0, 1), panel.fun = function(x, y){
@@ -200,20 +167,11 @@ circos.yaxis(at = c(-8, -5, -3, 0, 3, 5, 8), labels.cex = 0.15, lwd = 0.2,
 # gene labels
 circos.genomicLabels(ann,
                      labels.column = 5, 
-                     cex = 0.25, # 0.25
+                     cex = 0.25,
                      col=col_text,
                      line_lwd = 0.5, line_col = "grey10", side="inside", 
                      connection_height = 0.05, labels_height = 0.04)
 ```
-
-
-
-
-
-
-
-
-
 
 
 
